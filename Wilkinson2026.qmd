@@ -1,0 +1,104 @@
+---
+title: "Reproduction of results and figures of Wilkinson et al., 2026. Investigating the genetic, morphological and growth patterns of a stocked Alpine charr (Salvelinus umbla) population"
+format: html
+editor: visual
+---
+
+### Install and import packages
+
+```{r}
+
+```
+
+### Import all data needed for analyses
+
+```{r}
+## Import global file with all sampled individuals
+OmblesAnnecy <- read.csv("data/processed/OmblesAnnecy.csv", sep = ";")
+
+```
+
+# Results
+
+## 1. Stocking efficiency
+
+```{r}
+
+RelativeProportions <- OmblesAnnecy %>%
+  select(Individual, CaptureYear, Origin)
+
+ContingencyTable <- RelativeProportions %>%
+  group_by(CaptureYear, Origin) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = Origin, values_from = n, values_fill = 0) %>%
+  column_to_rownames("CaptureYear") %>%
+  as.matrix()
+
+PercentTable <- RelativeProportions %>%
+  group_by(CaptureYear, Origin) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(CaptureYear) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>%
+  pivot_wider(names_from = Origin, values_from = Percent, values_fill = 0)
+
+Chi2Result <- chisq.test(ContingencyTable)
+Chi2Result
+
+
+Proportions <- RelativeProportions %>%
+  group_by(CaptureYear, Origin) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(CaptureYear) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup()%>%
+  mutate(CaptureYear = as.character(CaptureYear))
+
+MeanProportions <- Proportions %>%
+  group_by(Origin) %>%
+  summarise(Percent = mean(Percent), .groups = "drop") %>%
+  mutate(CaptureYear = "Mean")
+
+Proportions_plot <- bind_rows(Proportions, MeanProportions)
+
+TopLabels <- Proportions %>%
+  filter(Origin == "Naturelle")
+
+windowsFonts(Ebrima = windowsFont("Ebrima"))
+
+ggplot(Proportions_plot, aes(x = factor(CaptureYear), y = Percent, fill = Origin)) +
+  geom_bar(stat = "identity", color = "black") +
+  
+  scale_fill_manual(
+    values = c("Naturelle" = "darkblue", 
+               "Puya" = "orange", 
+               "Rives" = "purple"),
+    labels = c("Naturelle" = "Natural reproduction",
+               "Puya" = "La Puya",
+               "Rives" = "Rives")) +
+  
+  labs(x = "Year", y = "Proportion (%)", fill = "Origin") +
+  theme_classic(base_size = 14) +
+  theme(
+    legend.position = "right",
+    text = element_text(family = "Ebrima", size = 17))
+
+```
+
+## 2. Genetic structure
+
+```{r}
+
+```
+
+## 3. Growth
+
+```{r}
+
+```
+
+## 4. Morphology
+
+```{r}
+
+```
